@@ -12,7 +12,7 @@ Once you've created a Cloud TPU node, you can train your PyTorch models by eithe
 Follow these steps to train a PyTorch model with Docker on a TPU:
 
 1. Create a Compute VM and install docker (or use COS VM image)
-    * *Note: make sure the Compute VM is within the **same** zone as the TPU node you created or else performance will suffer, also ideally create a VM that has at least 16 cores (`n1-standard-16`) to not be VM compute/network bound.*
+    * *Note: make sure the Compute VM is within the **same** zone as the TPU node you created or else performance will suffer, also ideally create a VM that has at least 16 cores to not be VM compute/network bound.*
 
     Docker images with `torch` and `torch_xla` preinstalled in the `pytorch` conda
     environment are distributed under: `gcr.io/tpu-pytorch/xla`.
@@ -49,7 +49,7 @@ Follow these steps to train a PyTorch model with Docker on a TPU:
 
     * In the GCP Console, go to the [**VM Instances**](https://console.cloud.google.com/compute/instances) page.
     * Click **Create Instance**.
-    * Make sure the compute VM is within the **same** zone as the TPU node you created or else performance will suffer, also ideally create a VM that has at least 16 cores (`n1-standard-16`) to not be VM compute/network bound.
+    * Make sure the compute VM is within the **same** zone as the TPU node you created or else performance will suffer, also ideally create a VM that has at least 16 cores to not be VM compute/network bound.
     * In the **Boot disk** section, click **Change** to choose our PyTorch/XLA image.
     * At the bottom of the **OS Images** tab select the **Debian GNU/Linux 9 Stretch + PyTorch/XLA** image.
     * Chose an appropriate dist size based on your dataset and click **Select**.
@@ -67,7 +67,7 @@ Follow these steps to train a PyTorch model with Docker on a TPU:
     pytorch-0.1              /anaconda3/envs/pytorch-0.1
     pytorch-nightly          /anaconda3/envs/pytorch-nightly
 
-    (vm)$ conda activate pytorch-0.1
+    (vm)$ source activate pytorch-0.1
     (pytorch-0.1)$ cd /usr/share/torch-xla-0.1/pytorch/xla
     (pytorch-0.1)$ python test/test_train_mnist.py
     ```
@@ -180,11 +180,16 @@ To run the tests, follow __one__ of the options below:
 
   Select any free TCP port you prefer instead of 40934 (totally arbitrary).
 
-* Run on Cloud TPU using the XRT client, set the XRT_TPU_CONFIG environment variable:
+* Run on Cloud TPU using the XRT client, use one of the following:
 
-  ```Shell
-  export XRT_TPU_CONFIG="tpu_worker;0;<IP of the TPU node>:8470"
-  ```
+  - Set the XRT_TPU_CONFIG environment variable:
+
+    ```Shell
+    export XRT_TPU_CONFIG="tpu_worker;0;<IP of the TPU node>:8470"
+    ```
+
+  - Create a `$HOME/.pytorch_tpu.conf` file with the following content: `worker: tpu_worker <IP of the TPU node>:8470`
+
 
 Note that the IP of the TPU node can change if the TPU node is reset. If _PyTorch_
 seem to hang at startup, verify that the IP of your TPU node is still the same of
@@ -268,9 +273,6 @@ only be enabled for debugging.
 
 * ```XLA_SAVE_TENSORS_FMT```: The format of the graphs stored within the _XLA_SAVE_TENSORS_FILE_
   file. Can be ```text``` (the default), ```dot``` (the _Graphviz_ format) or ```hlo```.
-  
-* ```XLA_METRICS_FILE```: If set, the path to a local file where the internal metrics will be
-  saved at every step. Metrics will be appended to the file, if already existing.
 
 * ```GET_TENSORS_OPBYOP```: Enables pure _OpByOp_ dispatch. The _PyTorch/TPU_ software tries to
   fuse together many _PyTorch_ operations into a single computation graph, but sometimes, either
@@ -283,9 +285,6 @@ only be enabled for debugging.
 * ```SYNC_TENSORS_OPBYOP```: The same as _GET_TENSORS_OPBYOP_ but for "sync tensors" operation
   (the operation used at the end of a step, to flush pending IR computations and materialize
   them into _TPU_ device data).
-  
-* ```XLA_SYNC_WAIT```: Forces the XLA tensor sync operation to wait for its completion, before
-  moving to the next step.
 
 * ```XLA_USE_BF16```: If set to 1, tranforms all the _PyTorch_ _Float_ values into _BiFloat16_
   when sending to the _TPU_ device.
